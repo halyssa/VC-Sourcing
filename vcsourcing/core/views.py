@@ -4,7 +4,6 @@ from rest_framework import generics
 from .models import Company
 from .serializers import CompanySerializer
 from django.http import JsonResponse
-
 # Health check endpoint
 @api_view(['GET'])
 def health(request):
@@ -22,3 +21,8 @@ class CompanyListView(generics.ListAPIView):
 class CompanyDetailView(generics.RetrieveAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
+=======
+@api_view(['GET'])
+def health(request):
+    payload = {"status": "ok"}
+    return Response(payload)
