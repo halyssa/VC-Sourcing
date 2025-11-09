@@ -21,7 +21,7 @@ class CompanyListView(generics.ListAPIView):
 class CompanyDetailView(generics.RetrieveAPIView):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-=======
+
 @api_view(['GET'])
 def health(request):
     payload = {"status": "ok"}
