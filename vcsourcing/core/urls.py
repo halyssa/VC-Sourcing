@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import health
+from .views import health, CompanyListView, CompanyDetailView
 
-# TODO: create a list named 'urlpatterns' with the value 'path('api/health/', health),'
 urlpatterns = [
-    path("api/health/", health, name="health"),
+    path("health/", health, name="health"),
+    path("api/companies/", CompanyListView.as_view(), name="company-list"),
+    path("api/companies/<int:pk>/", CompanyDetailView.as_view(), name="company-detail"),
 ]
