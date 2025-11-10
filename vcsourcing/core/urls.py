@@ -1,6 +1,9 @@
 from django.urls import path
-from .views import health
+from .views import health, CompanyListView, CompanyDetailView
 
 urlpatterns = [
-     path("api/health/", health),
+    path("api/health/", health, name="health"),
+    path("api/companies/", CompanyListView.as_view(), name="company-list"),
+    path("api/companies/<int:pk>/", CompanyDetailView.as_view(), name="company-detail"),
+]
 ]
