@@ -17,7 +17,7 @@ class CompanyListView(generics.ListAPIView):
     queryset = Company.objects.all().order_by('name')
     serializer_class = CompanySerializer
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['funding_round', 'location', 'num_employees', 'founding_year', 'growth_percentage']    
+    filterset_fields = ['funding_round', 'location', 'num_employees', 'founding_year', 'growth_percentage', "funding"]    
 
 
 # Retrieve a single company by ID
