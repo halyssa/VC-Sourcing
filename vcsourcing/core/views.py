@@ -4,6 +4,12 @@ from rest_framework import generics
 from .models import Company
 from .serializers import CompanySerializer
 from django.http import JsonResponse
+try:
+    from django_filters.rest_framework import DjangoFilterBackend
+    FILTER_BACKENDS = [DjangoFilterBackend]
+except Exception:
+    #Fall back to no filter backend.
+    FILTER_BACKENDS = []
 # Health check endpoint
 @api_view(['GET'])
 def health(request):
@@ -16,7 +22,7 @@ def home(request):
 class CompanyListView(generics.ListAPIView):
     queryset = Company.objects.all().order_by('name')
     serializer_class = CompanySerializer
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = FILTER_BACKENDS
     filterset_fields = ['funding_round', 'location', 'num_employees', 'founding_year', 'growth_percentage', "funding"]    
 
 
