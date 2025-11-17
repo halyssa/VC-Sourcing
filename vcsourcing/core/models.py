@@ -1,11 +1,9 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-# Create your models here.
-class Company(models.Model):
-    name = models.CharField(max_length=255)
-    funding_round = models.CharField(max_length=50)
-    funding = models.IntegerField()
-    location = models.CharField(max_length=100)
+User = get_user_model()
+
+
 class Company(models.Model):
     name = models.CharField(max_length=255)
     funding_round = models.CharField(max_length=50)
@@ -17,3 +15,24 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Watchlist(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="watchlist_items",
+    )
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="watchlisted_by",
+    )
+
+    class Meta:
+        unique_together = ("user", "company")
+        verbose_name = "Watchlist item"
+        verbose_name_plural = "Watchlist items"
+
+    def __str__(self):
+        return f"{self.user} – {self.company}"

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Company
+from .models import Company, Watchlist
 
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,3 +13,15 @@ class CompanySerializer(serializers.ModelSerializer):
             "founding_year",
             "growth_percentage",
         ]
+
+class WatchlistSerializer(serializers.ModelSerializer):
+    company = CompanySerializer(read_only=True)
+    company_id = serializers.PrimaryKeyRelatedField(
+        source="company",
+        queryset=Company.objects.all(),
+        write_only=True,
+    )
+
+    class Meta:
+        model = Watchlist
+        fields = ["id", "company", "company_id"]
