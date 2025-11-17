@@ -4,6 +4,7 @@ from rest_framework import generics
 from .models import Company
 from .serializers import CompanySerializer
 from django.http import JsonResponse
+from .llm_service import run_prompt
 try:
     from django_filters.rest_framework import DjangoFilterBackend
     FILTER_BACKENDS = [DjangoFilterBackend]
@@ -35,3 +36,10 @@ class CompanyDetailView(generics.RetrieveAPIView):
 def health(request):
     payload = {"status": "ok"}
     return Response(payload)
+
+@api_view(['GET'])
+def llm_test(request):
+    """Test endpoint to verify OpenAI connectivity"""
+    test_prompt = "Tell me a little bit about VC-Sourcing."
+    response_text = run_prompt(test_prompt)
+    return Response({"response": response_text})
