@@ -1,8 +1,10 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import generics
-from .models import Company
-from .serializers import CompanySerializer
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import PermissionDenied
+from .models import Company, Watchlist
+from .serializers import CompanySerializer, WatchlistSerializer
 from django.http import JsonResponse
 from .llm_service import run_prompt
 try:
@@ -43,3 +45,85 @@ def llm_test(request):
     test_prompt = "Tell me a little bit about VC-Sourcing."
     response_text = run_prompt(test_prompt)
     return Response({"response": response_text})
+
+class UserWatchlistView(generics.ListAPIView):
+    serializer_class = WatchlistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user_id = self.kwargs["user_id"]
+
+        # 3. validation: user can only view their own watchlist
+        if self.request.user.id != user_id:
+            raise PermissionDenied("You can only view your own watchlist.")
+
+        return (
+            Watchlist.objects.filter(user_id=user_id)
+            .select_related("company")
+            .order_by("company__name")
+        )
+    
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def watchlist_add(request):
+    """
+    Body: { "company_id": <int> }
+    Adds the company to the authenticated user's watchlist.
+    """
+    company_id = request.data.get("company_id")
+    if not company_id:
+        return Response(
+            {"detail": "company_id is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        company = Company.objects.get(pk=company_id)
+    except Company.DoesNotExist:
+        return Response(
+            {"detail": "Company not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    # unique_together also enforces this, but we give a nice error first
+    watchlist_item, created = Watchlist.objects.get_or_create(
+        user=request.user,
+        company=company,
+    )
+
+    if not created:
+        return Response(
+            {"detail": "Company is already in your watchlist."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    serializer = WatchlistSerializer(watchlist_item)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def watchlist_remove(request):
+    """
+    Body: { "company_id": <int> }
+    Removes the company from the authenticated user's watchlist.
+    """
+    company_id = request.data.get("company_id")
+    if not company_id:
+        return Response(
+            {"detail": "company_id is required."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        watchlist_item = Watchlist.objects.get(
+            user=request.user,
+            company_id=company_id,
+        )
+    except Watchlist.DoesNotExist:
+        return Response(
+            {"detail": "Watchlist item not found."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    watchlist_item.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
