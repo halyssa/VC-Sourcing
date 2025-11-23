@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import SearchBar from "@/components/SearchBar";
+import Card from "@/components/Card";
 import { isAuthenticated, decodeToken, logout } from "@/lib/auth";
 
 type Company = {
@@ -22,16 +23,14 @@ export default function CompaniesPage() {
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
 
-  // Companies state
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [allCompanies, setAllCompanies] = useState<Company[]>([]);
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Pagination
   const [page, setPage] = useState(1);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [prevPage, setPrevPage] = useState<string | null>(null);
+  const pageSize = 10;
 
   // Filters
   const [search, setSearch] = useState("");
@@ -39,10 +38,19 @@ export default function CompaniesPage() {
   const [locationFilter, setLocationFilter] = useState("");
   const [sector, setSector] = useState<string | null>(null);
 
+  // Sorting
+  const [sortBy, setSortBy] = useState<string | null>(null);
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
+
+  // Recommendations
+  const [recommended, setRecommended] = useState<Company[]>([]);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recError, setRecError] = useState<string | null>(null);
+
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   useEffect(() => {
-    // Commented login check to bypass login temporarily
+    // Original authentication check
     // if (!isAuthenticated()) {
     //   router.replace("/login");
     //   return;
@@ -53,24 +61,28 @@ export default function CompaniesPage() {
     setName(maybeName);
   }, [router]);
 
-  // Fetch companies from API
-  const fetchCompanies = async () => {
+  // Fetch all companies
+  const fetchAllCompanies = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const params = new URLSearchParams();
-      params.set("page", page.toString());
-      if (fundingRound) params.set("funding_round", fundingRound);
-      if (sector) params.set("sector", sector);
+      let results: Company[] = [];
+      let pageNum = 1;
+      let hasNext = true;
 
-      const res = await fetch(`${baseUrl}/api/companies/?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      while (hasNext) {
+        const params = new URLSearchParams();
+        params.set("page", pageNum.toString());
+        const res = await fetch(`${baseUrl}/api/companies/?${params.toString()}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-      const data = await res.json();
-      setCompanies(data.results || []);
-      setNextPage(data.next);
-      setPrevPage(data.previous);
+        results = results.concat(data.results);
+        hasNext = !!data.next;
+        pageNum++;
+      }
+
+      setAllCompanies(results);
     } catch (err: any) {
       setError(err.message || "Failed to fetch companies");
     } finally {
@@ -78,9 +90,25 @@ export default function CompaniesPage() {
     }
   };
 
-  // Apply client-side filtering for search and location
+  // Fetch recommendations
+  const fetchRecommended = async () => {
+    setRecLoading(true);
+    setRecError(null);
+    try {
+      const res = await fetch(`${baseUrl}/api/companies/recommended/`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setRecommended(data.results || []);
+    } catch (err: any) {
+      setRecError(err.message || "Failed to fetch recommendations");
+    } finally {
+      setRecLoading(false);
+    }
+  };
+
+  // Apply filters + sorting
   useEffect(() => {
-    let results = [...companies];
+    let results = [...allCompanies];
 
     if (search) {
       const searchLower = search.toLowerCase();
@@ -96,12 +124,34 @@ export default function CompaniesPage() {
       results = results.filter((c) => c.location.toLowerCase().includes(locLower));
     }
 
+    if (fundingRound) results = results.filter((c) => c.funding_round === fundingRound);
+    if (sector) results = results.filter((c) => c.sector === sector);
+
+    // Sorting client-side
+    if (sortBy && sortDirection) {
+      results.sort((a, b) => {
+        let valA: any = a[sortBy as keyof Company];
+        let valB: any = b[sortBy as keyof Company];
+
+        if (sortBy === "funding" || sortBy === "num_employees" || sortBy === "growth_percentage") {
+          valA = Number(valA);
+          valB = Number(valB);
+        }
+
+        if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+        if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
     setFilteredCompanies(results);
-  }, [companies, search, locationFilter]);
+    setPage(1); // Reset page whenever filters or sort change
+  }, [allCompanies, search, locationFilter, fundingRound, sector, sortBy, sortDirection]);
 
   useEffect(() => {
-    fetchCompanies();
-  }, [page, fundingRound, sector]);
+    fetchAllCompanies();
+    fetchRecommended();
+  }, []);
 
   function handleLogout() {
     logout();
@@ -113,7 +163,31 @@ export default function CompaniesPage() {
     setSector(null);
     setLocationFilter("");
     setSearch("");
-    setPage(1);
+  };
+
+  const handleSort = (column: string) => {
+    if (sortBy !== column) {
+      setSortBy(column);
+      setSortDirection("asc");
+    } else if (sortDirection === "asc") {
+      setSortDirection("desc");
+    } else {
+      setSortBy(null);
+      setSortDirection(null);
+    }
+  };
+
+  const paginatedCompanies = filteredCompanies.slice(
+    (page - 1) * pageSize,
+    page * pageSize
+  );
+  const totalPages = Math.ceil(filteredCompanies.length / pageSize);
+
+  const renderSortArrow = (column: string) => {
+    if (sortBy !== column) return null;
+    if (sortDirection === "asc") return " ↑";
+    if (sortDirection === "desc") return " ↓";
+    return null;
   };
 
   return (
@@ -131,33 +205,27 @@ export default function CompaniesPage() {
       <div className="w-full max-w-5xl px-6 mb-6 flex flex-wrap gap-4 items-center">
         <SearchBar
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setSearch(e.target.value)}
         />
         <select
           value={sector || ""}
-          onChange={(e) => {
-            setSector(e.target.value || null);
-            setPage(1);
-          }}
+          onChange={(e) => setSector(e.target.value || null)}
           className="border px-2 py-1 rounded"
         >
           <option value="">All Sectors</option>
           <option value="Fintech">Fintech</option>
-          <option value="AI">AI</option>
-          <option value="Healthcare">Healthcare</option>
+          <option value="AI/ML">AI</option>
+          <option value="Healthcare/Bio">Healthcare</option>
           <option value="SaaS">SaaS</option>
-          <option value="Crypto">Crypto</option>
+          <option value="Climate/Energy">Climate</option>
+          <option value="Consumer">Consumer</option>
+          <option value="Enterprise/B2B">Enterprise</option>
+
           <option value="Other">Other</option>
         </select>
         <select
           value={fundingRound || ""}
-          onChange={(e) => {
-            setFundingRound(e.target.value || null);
-            setPage(1);
-          }}
+          onChange={(e) => setFundingRound(e.target.value || null)}
           className="border px-2 py-1 rounded"
         >
           <option value="">All Funding Rounds</option>
@@ -170,10 +238,7 @@ export default function CompaniesPage() {
         <Input
           placeholder="Filter by location"
           value={locationFilter}
-          onChange={(e) => {
-            setLocationFilter(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => setLocationFilter(e.target.value)}
         />
         <Button
           onClick={handleClearFilters}
@@ -183,31 +248,56 @@ export default function CompaniesPage() {
         </Button>
       </div>
 
-      {/* Table / Loading / Error */}
+      {/* Table */}
       <div className="w-full max-w-5xl px-6">
         {loading ? (
           <p>Loading companies...</p>
         ) : error ? (
           <p className="text-red-600">{error}</p>
-        ) : filteredCompanies.length === 0 ? (
+        ) : paginatedCompanies.length === 0 ? (
           <p>No companies match your search criteria.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border border-gray-200">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-2 text-left">Name</th>
+                  <th
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort("name")}
+                  >
+                    Name{renderSortArrow("name")}
+                  </th>
                   <th className="px-4 py-2 text-left">Sector</th>
-                  <th className="px-4 py-2 text-left">Funding Round</th>
-                  <th className="px-4 py-2 text-left">Funding</th>
+                  <th
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort("funding_round")}
+                  >
+                    Funding Round{renderSortArrow("funding_round")}
+                  </th>
+                  <th
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort("funding")}
+                  >
+                    Funding{renderSortArrow("funding")}
+                  </th>
                   <th className="px-4 py-2 text-left">Location</th>
-                  <th className="px-4 py-2 text-left">Employees</th>
-                  <th className="px-4 py-2 text-left">Growth %</th>
+                  <th
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort("num_employees")}
+                  >
+                    # Employees{renderSortArrow("num_employees")}
+                  </th>
+                  <th
+                    className="px-4 py-2 text-left cursor-pointer"
+                    onClick={() => handleSort("growth_percentage")}
+                  >
+                    Growth %{renderSortArrow("growth_percentage")}
+                  </th>
                   <th className="px-4 py-2 text-left">Founded</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredCompanies.map((c, idx) => (
+                {paginatedCompanies.map((c, idx) => (
                   <tr
                     key={idx}
                     className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
@@ -229,14 +319,39 @@ export default function CompaniesPage() {
 
         {/* Pagination */}
         <div className="flex justify-between mt-4">
-          <Button onClick={() => setPage(page - 1)} disabled={!prevPage}>
+          <Button onClick={() => setPage(page - 1)} disabled={page === 1}>
             Previous
           </Button>
-          <span>Page {page}</span>
-          <Button onClick={() => setPage(page + 1)} disabled={!nextPage}>
+          <span>
+            Page {page} of {totalPages}
+          </span>
+          <Button onClick={() => setPage(page + 1)} disabled={page === totalPages}>
             Next
           </Button>
         </div>
+      </div>
+
+      {/* Recommended Section */}
+      <div className="w-full max-w-5xl px-6 mt-10">
+        <h2 className="text-xl font-bold mb-4">Recommended for You</h2>
+        {recLoading ? (
+          <p>Loading recommendations...</p>
+        ) : recError ? (
+          <p className="text-red-600">{recError}</p>
+        ) : recommended.length === 0 ? (
+          <p>Add companies to your watchlist to see recommendations here</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recommended.slice(0, 5).map((c, idx) => (
+              <Card key={idx}>
+                <h3 className="font-bold">{c.name}</h3>
+                <p>{c.sector}</p>
+                <p>{c.funding_round} | ${Number(c.funding).toLocaleString()}</p>
+                <p>{c.location}</p>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
