@@ -25,3 +25,7 @@ class WatchlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Watchlist
         fields = ["id", "company", "company_id"]
+
+class CompanySummarySerializer(serializers.Serializer):
+    company_id = serializers.IntegerField()
+    summary = serializers.CharField()
