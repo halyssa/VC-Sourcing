@@ -1,3 +1,5 @@
+// Please paste your current companies.tsx content here.
+// I will rewrite the entire file exactly as requested once you provide it.
 "use client";
 
 import { useEffect, useState } from "react";
@@ -95,13 +97,21 @@ export default function CompaniesPage() {
     setRecLoading(true);
     setRecError(null);
     try {
-      const res = await fetch(`${baseUrl}/api/companies/recommended/`);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${baseUrl}/api/companies/recommended/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setRecommended(data.results || []);
     } catch (err: any) {
       setRecError(err.message || "Failed to fetch recommendations");
     } finally {
+      setRecLoading(false);
+    } {
       setRecLoading(false);
     }
   };
@@ -337,9 +347,9 @@ export default function CompaniesPage() {
         {recLoading ? (
           <p>Loading recommendations...</p>
         ) : recError ? (
-          <p className="text-red-600">{recError}</p>
+          <p>Add companies to your watchlist to see recommendations here!</p>
         ) : recommended.length === 0 ? (
-          <p>Add companies to your watchlist to see recommendations here</p>
+          <p>Add companies to your watchlist to see recommendations here!</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {recommended.slice(0, 5).map((c, idx) => (
