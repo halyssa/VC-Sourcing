@@ -26,10 +26,57 @@ def home(request):
 
 # List all companies
 class CompanyListView(generics.ListAPIView):
-    queryset = Company.objects.all().order_by('name')
     serializer_class = CompanySerializer
-    filter_backends = FILTER_BACKENDS
-    filterset_fields = ['funding_round', 'location', 'num_employees', 'founding_year', 'growth_percentage', "funding"]    
+
+    def get_queryset(self):
+        qs = Company.objects.all()
+        params = self.request.query_params
+
+        # ----- Filters -----
+
+        # 1) sector: case-insensitive exact match on normalized sector
+        sector = params.get("sector")
+        if sector:
+            qs = qs.filter(sector__iexact=sector)
+
+        # 2) funding_round: case-insensitive exact match
+        funding_round = params.get("funding_round")
+        if funding_round:
+            qs = qs.filter(funding_round__iexact=funding_round)
+
+        # 3) location: case-insensitive substring match ("USA" matches "New York, USA")
+        location = params.get("location")
+        if location:
+            qs = qs.filter(location__icontains=location)
+
+        # 4) search: case-insensitive substring match against name
+        search = params.get("search")
+        if search:
+            qs = qs.filter(name__icontains=search)
+
+        # ----- Sorting -----
+
+        sort_by = params.get("sort_by")
+        sort_dir = params.get("sort_dir")
+
+        valid_sort_fields = {
+            "name": "name",
+            "funding": "funding",
+            "funding_round": "funding_round",
+            "num_employees": "num_employees",
+            "growth_percentage": "growth_percentage",
+        }
+
+        if sort_by in valid_sort_fields and sort_dir in ["asc", "desc"]:
+            field_name = valid_sort_fields[sort_by]
+            if sort_dir == "desc":
+                field_name = f"-{field_name}"
+            qs = qs.order_by(field_name)
+        else:
+            # Default ordering if sort params are missing/invalid
+            qs = qs.order_by("name")
+
+        return qs 
 
 
 # Retrieve a single company by ID
