@@ -2,7 +2,7 @@
 // I will rewrite the entire file exactly as requested once you provide it.
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
@@ -534,9 +534,8 @@ export default function CompaniesPage() {
               </thead>
               <tbody>
                 {paginatedCompanies.map((c, idx) => (
-                  <>
+                  <Fragment key={c.id}>
                     <tr
-                      key={c.id}
                       className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
                     >
                       <td className="px-4 py-2">
@@ -592,7 +591,7 @@ export default function CompaniesPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>
