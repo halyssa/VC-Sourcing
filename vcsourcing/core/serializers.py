@@ -7,6 +7,7 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
+            "sector", 
             "funding_round",
             "funding",
             "location",

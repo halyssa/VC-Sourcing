@@ -6,6 +6,7 @@ User = get_user_model()
 
 class Company(models.Model):
     name = models.CharField(max_length=255)
+    sector = models.CharField(max_length=100)  
     funding_round = models.CharField(max_length=50)
     funding = models.DecimalField(max_digits=15, decimal_places=2)
     location = models.CharField(max_length=255)
