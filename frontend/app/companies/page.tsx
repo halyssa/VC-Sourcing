@@ -8,9 +8,10 @@ import Button from "@/components/Button";
 import Input from "@/components/Input";
 import SearchBar from "@/components/SearchBar";
 import Card from "@/components/Card";
-import { isAuthenticated, decodeToken, logout } from "@/lib/auth";
+import { isAuthenticated, decodeToken, logout, getToken } from "@/lib/auth";
 
 type Company = {
+  id: number;
   name: string;
   funding_round: string;
   funding: string;
@@ -19,6 +20,14 @@ type Company = {
   founding_year: number;
   growth_percentage: number;
   sector: string;
+};
+
+type ColumnVisibility = {
+  sector: boolean;
+  location: boolean;
+  funding_round: boolean;
+  num_employees: boolean;
+  growth_percentage: boolean;
 };
 
 export default function CompaniesPage() {
@@ -48,6 +57,25 @@ export default function CompaniesPage() {
   const [recommended, setRecommended] = useState<Company[]>([]);
   const [recLoading, setRecLoading] = useState(false);
   const [recError, setRecError] = useState<string | null>(null);
+
+  // Task 3: Column customization
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibility>({
+    sector: true,
+    location: true,
+    funding_round: true,
+    num_employees: true,
+    growth_percentage: true,
+  });
+  const [showCustomizePanel, setShowCustomizePanel] = useState(false);
+
+  // Task 4: Watchlist
+  const [watchlistCompanyIds, setWatchlistCompanyIds] = useState<Set<number>>(new Set());
+  const [watchlistLoading, setWatchlistLoading] = useState<Set<number>>(new Set());
+
+  // Task 6: AI Summary
+  const [expandedSummaries, setExpandedSummaries] = useState<Set<number>>(new Set());
+  const [summaries, setSummaries] = useState<Map<number, string>>(new Map());
+  const [summaryLoading, setSummaryLoading] = useState<Set<number>>(new Set());
 
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
@@ -111,8 +139,33 @@ export default function CompaniesPage() {
       setRecError(err.message || "Failed to fetch recommendations");
     } finally {
       setRecLoading(false);
-    } {
-      setRecLoading(false);
+    }
+  };
+
+  // Task 4: Fetch user's watchlist
+  const fetchWatchlist = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
+
+      const payload = decodeToken();
+      const userId = payload?.user_id;
+      if (!userId) return;
+
+      const res = await fetch(`${baseUrl}/users/${userId}/watchlist/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const ids = new Set<number>(data.results?.map((item: any) => item.company.id) || []);
+        setWatchlistCompanyIds(ids);
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch watchlist:", err);
     }
   };
 
@@ -160,6 +213,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     fetchAllCompanies();
+    fetchWatchlist();
     fetchRecommended();
   }, []);
 
@@ -184,6 +238,112 @@ export default function CompaniesPage() {
     } else {
       setSortBy(null);
       setSortDirection(null);
+    }
+  };
+
+  // Task 3: Toggle column visibility
+  const toggleColumn = (column: keyof ColumnVisibility) => {
+    setColumnVisibility((prev) => ({
+      ...prev,
+      [column]: !prev[column],
+    }));
+  };
+
+  // Task 4: Toggle watchlist
+  const toggleWatchlist = async (companyId: number) => {
+    const isInWatchlist = watchlistCompanyIds.has(companyId);
+    const previousState = new Set(watchlistCompanyIds);
+
+    // Optimistic update
+    const newWatchlistIds = new Set(watchlistCompanyIds);
+    if (isInWatchlist) {
+      newWatchlistIds.delete(companyId);
+    } else {
+      newWatchlistIds.add(companyId);
+    }
+    setWatchlistCompanyIds(newWatchlistIds);
+
+    // Show loading
+    setWatchlistLoading((prev) => new Set(prev).add(companyId));
+
+    try {
+      const token = getToken();
+      const endpoint = isInWatchlist ? "/watchlist/remove/" : "/watchlist/add/";
+      const res = await fetch(`${baseUrl}${endpoint}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ company_id: companyId }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to update watchlist`);
+      }
+
+      // Refresh recommendations after watchlist change
+      fetchRecommended();
+    } catch (err: any) {
+      console.error("Watchlist error:", err);
+      // Revert on error
+      setWatchlistCompanyIds(previousState);
+    } finally {
+      setWatchlistLoading((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(companyId);
+        return newSet;
+      });
+    }
+  };
+
+  // Task 6: Toggle AI summary
+  const toggleSummary = async (companyId: number) => {
+    const isExpanded = expandedSummaries.has(companyId);
+
+    if (isExpanded) {
+      // Collapse
+      const newExpanded = new Set(expandedSummaries);
+      newExpanded.delete(companyId);
+      setExpandedSummaries(newExpanded);
+      return;
+    }
+
+    // Expand
+    const newExpanded = new Set(expandedSummaries);
+    newExpanded.add(companyId);
+    setExpandedSummaries(newExpanded);
+
+    // Fetch summary if not already loaded
+    if (!summaries.has(companyId)) {
+      setSummaryLoading((prev) => new Set(prev).add(companyId));
+
+      try {
+        const token = getToken();
+        const res = await fetch(`${baseUrl}/api/companies/${companyId}/summary/`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch summary`);
+        }
+
+        const data = await res.json();
+        setSummaries((prev) => new Map(prev).set(companyId, data.summary));
+      } catch (err: any) {
+        console.error("Summary error:", err);
+        setSummaries((prev) => new Map(prev).set(companyId, "Failed to load summary."));
+      } finally {
+        setSummaryLoading((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(companyId);
+          return newSet;
+        });
+      }
     }
   };
 
@@ -215,7 +375,7 @@ export default function CompaniesPage() {
       <div className="w-full max-w-5xl px-6 mb-6 flex flex-wrap gap-4 items-center">
         <SearchBar
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
         />
         <select
           value={sector || ""}
@@ -256,7 +416,61 @@ export default function CompaniesPage() {
         >
           Clear Filters
         </Button>
+        <Button onClick={() => setShowCustomizePanel(!showCustomizePanel)}>
+          Customize Table
+        </Button>
       </div>
+
+      {/* Task 3: Column Customization Panel */}
+      {showCustomizePanel && (
+        <div className="w-full max-w-5xl px-6 mb-6">
+          <Card>
+            <h3 className="font-bold mb-3">Customize Columns</h3>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility.sector}
+                  onChange={() => toggleColumn("sector")}
+                />
+                Sector
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility.location}
+                  onChange={() => toggleColumn("location")}
+                />
+                Location
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility.funding_round}
+                  onChange={() => toggleColumn("funding_round")}
+                />
+                Funding Round
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility.num_employees}
+                  onChange={() => toggleColumn("num_employees")}
+                />
+                Num Employees
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={columnVisibility.growth_percentage}
+                  onChange={() => toggleColumn("growth_percentage")}
+                />
+                Growth Percentage
+              </label>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Table */}
       <div className="w-full max-w-5xl px-6">
@@ -271,56 +485,114 @@ export default function CompaniesPage() {
             <table className="min-w-full border border-gray-200">
               <thead className="bg-gray-100">
                 <tr>
+                  <th className="px-4 py-2 text-left">Watchlist</th>
                   <th
                     className="px-4 py-2 text-left cursor-pointer"
                     onClick={() => handleSort("name")}
                   >
                     Name{renderSortArrow("name")}
                   </th>
-                  <th className="px-4 py-2 text-left">Sector</th>
-                  <th
-                    className="px-4 py-2 text-left cursor-pointer"
-                    onClick={() => handleSort("funding_round")}
-                  >
-                    Funding Round{renderSortArrow("funding_round")}
-                  </th>
+                  {columnVisibility.sector && (
+                    <th className="px-4 py-2 text-left">Sector</th>
+                  )}
+                  {columnVisibility.funding_round && (
+                    <th
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleSort("funding_round")}
+                    >
+                      Funding Round{renderSortArrow("funding_round")}
+                    </th>
+                  )}
                   <th
                     className="px-4 py-2 text-left cursor-pointer"
                     onClick={() => handleSort("funding")}
                   >
                     Funding{renderSortArrow("funding")}
                   </th>
-                  <th className="px-4 py-2 text-left">Location</th>
-                  <th
-                    className="px-4 py-2 text-left cursor-pointer"
-                    onClick={() => handleSort("num_employees")}
-                  >
-                    # Employees{renderSortArrow("num_employees")}
-                  </th>
-                  <th
-                    className="px-4 py-2 text-left cursor-pointer"
-                    onClick={() => handleSort("growth_percentage")}
-                  >
-                    Growth %{renderSortArrow("growth_percentage")}
-                  </th>
+                  {columnVisibility.location && (
+                    <th className="px-4 py-2 text-left">Location</th>
+                  )}
+                  {columnVisibility.num_employees && (
+                    <th
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleSort("num_employees")}
+                    >
+                      # Employees{renderSortArrow("num_employees")}
+                    </th>
+                  )}
+                  {columnVisibility.growth_percentage && (
+                    <th
+                      className="px-4 py-2 text-left cursor-pointer"
+                      onClick={() => handleSort("growth_percentage")}
+                    >
+                      Growth %{renderSortArrow("growth_percentage")}
+                    </th>
+                  )}
                   <th className="px-4 py-2 text-left">Founded</th>
+                  <th className="px-4 py-2 text-left">AI Summary</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedCompanies.map((c, idx) => (
-                  <tr
-                    key={idx}
-                    className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
-                  >
-                    <td className="px-4 py-2">{c.name}</td>
-                    <td className="px-4 py-2">{c.sector}</td>
-                    <td className="px-4 py-2">{c.funding_round}</td>
-                    <td className="px-4 py-2">${Number(c.funding).toLocaleString()}</td>
-                    <td className="px-4 py-2">{c.location}</td>
-                    <td className="px-4 py-2">{c.num_employees}</td>
-                    <td className="px-4 py-2">{c.growth_percentage}%</td>
-                    <td className="px-4 py-2">{c.founding_year}</td>
-                  </tr>
+                  <>
+                    <tr
+                      key={c.id}
+                      className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                    >
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => toggleWatchlist(c.id)}
+                          disabled={watchlistLoading.has(c.id)}
+                          className="text-2xl hover:opacity-70 disabled:opacity-50"
+                          title={watchlistCompanyIds.has(c.id) ? "Remove from watchlist" : "Add to watchlist"}
+                        >
+                          {watchlistCompanyIds.has(c.id) ? "★" : "☆"}
+                        </button>
+                      </td>
+                      <td className="px-4 py-2">{c.name}</td>
+                      {columnVisibility.sector && (
+                        <td className="px-4 py-2">{c.sector}</td>
+                      )}
+                      {columnVisibility.funding_round && (
+                        <td className="px-4 py-2">{c.funding_round}</td>
+                      )}
+                      <td className="px-4 py-2">${Number(c.funding).toLocaleString()}</td>
+                      {columnVisibility.location && (
+                        <td className="px-4 py-2">{c.location}</td>
+                      )}
+                      {columnVisibility.num_employees && (
+                        <td className="px-4 py-2">{c.num_employees}</td>
+                      )}
+                      {columnVisibility.growth_percentage && (
+                        <td className="px-4 py-2">{c.growth_percentage}%</td>
+                      )}
+                      <td className="px-4 py-2">{c.founding_year}</td>
+                      <td className="px-4 py-2">
+                        <button
+                          onClick={() => toggleSummary(c.id)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          {expandedSummaries.has(c.id) ? "Hide" : "Show"} Summary
+                        </button>
+                      </td>
+                    </tr>
+                    {expandedSummaries.has(c.id) && (
+                      <tr key={`summary-${c.id}`}>
+                        <td colSpan={10} className="px-4 py-3 bg-blue-50">
+                          {summaryLoading.has(c.id) ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                              <span>Loading summary...</span>
+                            </div>
+                          ) : (
+                            <div>
+                              <strong>AI Summary:</strong> {summaries.get(c.id) || "No summary available."}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </>
                 ))}
               </tbody>
             </table>
