@@ -125,7 +125,7 @@ export default function CompaniesPage() {
     setRecLoading(true);
     setRecError(null);
     try {
-      const token = localStorage.getItem("token");
+      const token = getToken();
       const res = await fetch(`${baseUrl}/api/companies/recommended/`, {
         headers: {
           Authorization: `Bearer ${token}`,
