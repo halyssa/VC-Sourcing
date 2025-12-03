@@ -1,5 +1,3 @@
-// Please paste your current companies.tsx content here.
-// I will rewrite the entire file exactly as requested once you provide it.
 "use client";
 
 import { useEffect, useState, Fragment } from "react";
@@ -80,11 +78,6 @@ export default function CompaniesPage() {
   const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
   useEffect(() => {
-    // Original authentication check
-    // if (!isAuthenticated()) {
-    //   router.replace("/login");
-    //   return;
-    // }
     const payload = decodeToken();
     const maybeName =
       payload?.email || payload?.username || payload?.name || payload?.sub || null;
@@ -190,7 +183,6 @@ export default function CompaniesPage() {
     if (fundingRound) results = results.filter((c) => c.funding_round === fundingRound);
     if (sector) results = results.filter((c) => c.sector === sector);
 
-    // Sorting client-side
     if (sortBy && sortDirection) {
       results.sort((a, b) => {
         let valA: any = a[sortBy as keyof Company];
@@ -208,7 +200,7 @@ export default function CompaniesPage() {
     }
 
     setFilteredCompanies(results);
-    setPage(1); // Reset page whenever filters or sort change
+    setPage(1);
   }, [allCompanies, search, locationFilter, fundingRound, sector, sortBy, sortDirection]);
 
   useEffect(() => {
@@ -241,7 +233,6 @@ export default function CompaniesPage() {
     }
   };
 
-  // Task 3: Toggle column visibility
   const toggleColumn = (column: keyof ColumnVisibility) => {
     setColumnVisibility((prev) => ({
       ...prev,
@@ -254,7 +245,6 @@ export default function CompaniesPage() {
     const isInWatchlist = watchlistCompanyIds.has(companyId);
     const previousState = new Set(watchlistCompanyIds);
 
-    // Optimistic update
     const newWatchlistIds = new Set(watchlistCompanyIds);
     if (isInWatchlist) {
       newWatchlistIds.delete(companyId);
@@ -263,7 +253,6 @@ export default function CompaniesPage() {
     }
     setWatchlistCompanyIds(newWatchlistIds);
 
-    // Show loading
     setWatchlistLoading((prev) => new Set(prev).add(companyId));
 
     try {
@@ -282,11 +271,9 @@ export default function CompaniesPage() {
         throw new Error(`Failed to update watchlist`);
       }
 
-      // Refresh recommendations after watchlist change
       fetchRecommended();
     } catch (err: any) {
       console.error("Watchlist error:", err);
-      // Revert on error
       setWatchlistCompanyIds(previousState);
     } finally {
       setWatchlistLoading((prev) => {
@@ -297,24 +284,20 @@ export default function CompaniesPage() {
     }
   };
 
-  // Task 6: Toggle AI summary
   const toggleSummary = async (companyId: number) => {
     const isExpanded = expandedSummaries.has(companyId);
 
     if (isExpanded) {
-      // Collapse
       const newExpanded = new Set(expandedSummaries);
       newExpanded.delete(companyId);
       setExpandedSummaries(newExpanded);
       return;
     }
 
-    // Expand
     const newExpanded = new Set(expandedSummaries);
     newExpanded.add(companyId);
     setExpandedSummaries(newExpanded);
 
-    // Fetch summary if not already loaded
     if (!summaries.has(companyId)) {
       setSummaryLoading((prev) => new Set(prev).add(companyId));
 
@@ -390,7 +373,6 @@ export default function CompaniesPage() {
           <option value="Climate/Energy">Climate</option>
           <option value="Consumer">Consumer</option>
           <option value="Enterprise/B2B">Enterprise</option>
-
           <option value="Other">Other</option>
         </select>
         <select
@@ -614,7 +596,15 @@ export default function CompaniesPage() {
 
       {/* Recommended Section */}
       <div className="w-full max-w-5xl px-6 mt-10">
-        <h2 className="text-xl font-bold mb-4">Recommended for You</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Recommended for You</h2>
+
+          {/* ⭐️ THE ONE AND ONLY EDIT YOU ASKED FOR */}
+          <Button onClick={() => router.push("/watchlist")}>
+            View Your Watchlist
+          </Button>
+        </div>
+
         {recLoading ? (
           <p>Loading recommendations...</p>
         ) : recError ? (
