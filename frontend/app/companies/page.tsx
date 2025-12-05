@@ -178,7 +178,14 @@ export default function CompaniesPage() {
       results = results.filter((c) => c.location.toLowerCase().includes(locLower));
     }
 
-    if (fundingRound) results = results.filter((c) => c.funding_round === fundingRound);
+    if (fundingRound) {
+  if (fundingRound === "Other") {
+    const mainRounds = ["Seed", "Series A", "Series B", "Series C", "Series D"];
+    results = results.filter((c) => !mainRounds.includes(c.funding_round));
+  } else {
+    results = results.filter((c) => c.funding_round === fundingRound);
+  }
+}
     if (sector) results = results.filter((c) => c.sector === sector);
 
     if (sortBy && sortDirection) {
@@ -342,41 +349,50 @@ export default function CompaniesPage() {
   };
 
   return (
-    <div className="flex flex-col items-center min-h-screen pt-10">
+    <div className="flex flex-col items-center min-h-screen pt-10 bg-[#ffffff] font-sans">
       {/* Header / Logout */}
       <div className="w-full max-w-5xl flex justify-between px-6 mb-6">
-        <h1 className="text-2xl font-bold">Companies</h1>
+        <h1 className="text-2xl font-bold text-[#870909]">Companies</h1>
         <div className="flex items-center gap-4">
-          <div>Hi {name ?? "!"}</div>
-          <Button onClick={handleLogout}>Logout</Button>
+          <div
+          className="mr-[10px]"
+          >Hi Test{name ?? "!"}</div>
+          <Button 
+          className="border px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff]"
+
+          onClick={handleLogout}>Logout</Button>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="w-full max-w-5xl px-6 mb-6 flex flex-wrap gap-4 items-center">
+      <div className="w-full max-w-5xl px-4 mb-6 flex flex-wrap gap-4 items-center">
         <SearchBar
           value={search}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
+          className="pr-[50px] py-[10px] mb-[30px] bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
         />
         <select
           value={sector || ""}
           onChange={(e) => setSector(e.target.value || null)}
-          className="border px-2 py-1 rounded"
+          className="border px-2 py-[10px] mb-[30px] ml-[15px] mr-[15px] border-10px rounded  bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
         >
           <option value="">All Sectors</option>
-          <option value="Fintech">Fintech</option>
-          <option value="AI/ML">AI</option>
-          <option value="Healthcare/Bio">Healthcare</option>
-          <option value="SaaS">SaaS</option>
-          <option value="Climate/Energy">Climate</option>
-          <option value="Consumer">Consumer</option>
-          <option value="Enterprise/B2B">Enterprise</option>
+          <option value="Financial Services">Financial Services</option>
+          <option value="Biotechnology">Biotechnology</option>
+          <option value="Information Technology and Services">Information Technology and Services</option>
+          <option value="Defense and Space Manufacturing">Defense and Space Manufacturing</option>
+          <option value="Medical Device">Medical Device</option>
+          <option value="Biotechnology Research">Biotechnology Research</option>
+          <option value="Computer Software">Computer Software</option>
           <option value="Other">Other</option>
         </select>
         <select
           value={fundingRound || ""}
           onChange={(e) => setFundingRound(e.target.value || null)}
-          className="border px-2 py-1 rounded"
+          className="border px-2 py-[10px] mb-[30px] mr-[20px] rounded  bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
         >
           <option value="">All Funding Rounds</option>
           <option value="Seed">Seed</option>
@@ -384,30 +400,47 @@ export default function CompaniesPage() {
           <option value="Series B">Series B</option>
           <option value="Series C">Series C</option>
           <option value="Series D">Series D</option>
+          <option value="Other">Other</option>
+
         </select>
         <Input
           placeholder="Filter by location"
           value={locationFilter}
           onChange={(e) => setLocationFilter(e.target.value)}
+          className="border px-2 py-[10px] mb-[30px] mr-[20px]  bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
         />
         <Button
           onClick={handleClearFilters}
           disabled={!search && !fundingRound && !locationFilter && !sector}
+          className="border px-2 py-[10px] mb-[30px] mr-[20px]   bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
         >
           Clear Filters
         </Button>
-        <Button onClick={() => setShowCustomizePanel(!showCustomizePanel)}>
+        <Button onClick={() => setShowCustomizePanel(!showCustomizePanel)}
+          className="border px-2 py-[10px] mb-[30px] mr-[20px]   bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
+          >
+            
+      
           Customize Table
         </Button>
       </div>
 
       {/* Task 3: Column Customization Panel */}
       {showCustomizePanel && (
-        <div className="w-full max-w-5xl px-6 mb-6">
+        <div className="w-full max-w-5xl px-6 mb-6"
+             style={{ borderRadius: '12px' }}
+
+          
+        >
           <Card>
-            <h3 className="font-bold mb-3">Customize Columns</h3>
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2">
+            <h3 className="font-bold mb-3 text-[#870909] ">Customize Columns</h3>
+            <div className="flex flex-wrap gap-4"
+            >
+               
+              <label className="flex items-center gap-2 mx-[10px] text-[#870909]">
                 <input
                   type="checkbox"
                   checked={columnVisibility.sector}
@@ -415,7 +448,7 @@ export default function CompaniesPage() {
                 />
                 Sector
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2  mx-[10px] text-[#870909]">
                 <input
                   type="checkbox"
                   checked={columnVisibility.location}
@@ -423,7 +456,7 @@ export default function CompaniesPage() {
                 />
                 Location
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2  mx-[10px] text-[#870909]">
                 <input
                   type="checkbox"
                   checked={columnVisibility.funding_round}
@@ -431,7 +464,7 @@ export default function CompaniesPage() {
                 />
                 Funding Round
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2  mx-[10px] text-[#870909]">
                 <input
                   type="checkbox"
                   checked={columnVisibility.num_employees}
@@ -445,7 +478,7 @@ export default function CompaniesPage() {
       )}
 
       {/* Table */}
-      <div className="w-full max-w-5xl px-6">
+      <div className="w-full max-w-5xl px-6 bg-[#ffffff]">
         {loading ? (
           <p>Loading companies...</p>
         ) : error ? (
@@ -457,43 +490,43 @@ export default function CompaniesPage() {
             <table className="min-w-full border border-gray-200">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-2 text-left">Watchlist</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Watchlist</th>
                   <th
-                    className="px-4 py-2 text-left cursor-pointer"
+                    className="px-4 py-2 text-left cursor-pointer text-[#870909]"
                     onClick={() => handleSort("name")}
                   >
                     Name{renderSortArrow("name")}
                   </th>
                   {columnVisibility.sector && (
-                    <th className="px-4 py-2 text-left">Sector</th>
+                    <th className="px-4 py-2 text-left text-[#870909] border-width:10px">Sector</th>
                   )}
                   {columnVisibility.funding_round && (
                     <th
-                      className="px-4 py-2 text-left cursor-pointer"
+                      className="px-4 py-2 text-left cursor-pointer text-[#870909]"
                       onClick={() => handleSort("funding_round")}
                     >
                       Funding Round{renderSortArrow("funding_round")}
                     </th>
                   )}
                   <th
-                    className="px-4 py-2 text-left cursor-pointer"
+                    className="px-4 py-2 text-left cursor-pointer text-[#870909]"
                     onClick={() => handleSort("funding")}
                   >
                     Funding{renderSortArrow("funding")}
                   </th>
                   {columnVisibility.location && (
-                    <th className="px-4 py-2 text-left">Location</th>
+                    <th className="px-4 py-2 text-left text-[#870909]">Location</th>
                   )}
                   {columnVisibility.num_employees && (
                     <th
-                      className="px-4 py-2 text-left cursor-pointer"
+                      className="px-4 py-2 text-left cursor-pointer text-[#870909]"
                       onClick={() => handleSort("num_employees")}
                     >
                       # Employees{renderSortArrow("num_employees")}
                     </th>
                   )}
-                  <th className="px-4 py-2 text-left">Founded</th>
-                  <th className="px-4 py-2 text-left">AI Summary</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Founded</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">AI Summary</th>
                 </tr>
               </thead>
               <tbody>
@@ -514,7 +547,7 @@ export default function CompaniesPage() {
                       </td>
                       <td className="px-4 py-2">{c.name}</td>
                       {columnVisibility.sector && (
-                        <td className="px-4 py-2">{c.sector}</td>
+                        <td className="px-4 py-2 ">{c.sector}</td>
                       )}
                       {columnVisibility.funding_round && (
                         <td className="px-4 py-2">{c.funding_round}</td>
@@ -560,14 +593,23 @@ export default function CompaniesPage() {
         )}
 
         {/* Pagination */}
-        <div className="flex justify-between mt-4">
-          <Button onClick={() => setPage(page - 1)} disabled={page === 1}>
+        <div className="flex justify-between mt-4 mt-[10px] bg-[#ffffff]">
+          <Button onClick={() => setPage(page - 1)} disabled={page === 1}
+                  className="px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff]"
+                  style={{ borderRadius: '12px' }}
+
+             >
             Previous
           </Button>
-          <span>
+          <span
+            className="text-[#870909]">
             Page {page} of {totalPages}
           </span>
-          <Button onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+          <Button onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                  className="px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff]"
+                  style={{ borderRadius: '12px' }}
+
+            >
             Next
           </Button>
         </div>
@@ -576,10 +618,14 @@ export default function CompaniesPage() {
       {/* Recommended Section */}
       <div className="w-full max-w-5xl px-6 mt-10">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">Recommended for You</h2>
+          <h2 className="text-xl font-bold text-[#870909]">Recommended for You</h2>
 
           {/* ⭐️ THE ONE AND ONLY EDIT YOU ASKED FOR */}
-          <Button onClick={() => router.push("/watchlist")}>
+          <Button onClick={() => router.push("/watchlist")}
+                  className="px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff]"
+                  style={{ borderRadius: '12px' }}
+
+            >
             View Your Watchlist
           </Button>
         </div>
@@ -591,10 +637,12 @@ export default function CompaniesPage() {
         ) : recommended.length === 0 ? (
           <p>Add companies to your watchlist to see recommendations here!</p>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"    
+          >
             {recommended.slice(0, 5).map((c, idx) => (
               <Card key={idx}>
-                <h3 className="font-bold">{c.name}</h3>
+                <h3 className="font-bold text-[#870909]">{c.name}</h3>
                 <p>{c.sector}</p>
                 <p>{c.funding_round} | ${Number(c.funding).toLocaleString()}</p>
                 <p>{c.location}</p>

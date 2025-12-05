@@ -105,10 +105,13 @@ export default function WatchlistPage() {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen pt-10">
+    <div className="flex flex-col items-center min-h-screen pt-10 font-sans">
       <div className="w-full max-w-4xl flex justify-between px-6 mb-6">
-        <h1 className="text-2xl font-bold">Your Watchlist</h1>
-        <Button onClick={() => router.push("/companies")}>Back to Companies</Button>
+        <h1 className="text-2xl font-bold text-[#870909]">Your Watchlist</h1>
+        <Button 
+          className="border px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff] mb-[20px]"
+          style={{ borderRadius: '12px' }}
+        onClick={() => router.push("/companies")}>Back to Companies</Button>
       </div>
 
       <div className="w-full max-w-4xl px-6">
@@ -123,12 +126,12 @@ export default function WatchlistPage() {
             <table className="min-w-full border border-gray-200">
               <thead className="bg-gray-100">
                 <tr>
-                  <th className="px-4 py-2 text-left">Remove</th>
-                  <th className="px-4 py-2 text-left">Name</th>
-                  <th className="px-4 py-2 text-left">Sector</th>
-                  <th className="px-4 py-2 text-left">Funding</th>
-                  <th className="px-4 py-2 text-left">Location</th>
-                  <th className="px-4 py-2 text-left">Employees</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Remove</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Name</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Sector</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Funding</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Location</th>
+                  <th className="px-4 py-2 text-left text-[#870909]">Employees</th>
                 </tr>
               </thead>
               <tbody>
