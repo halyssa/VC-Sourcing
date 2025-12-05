@@ -16,8 +16,8 @@ type Company = {
   location: string;
   num_employees: number;
   founding_year: number;
-  growth_percentage: number;
   sector: string;
+  description?: string;
 };
 
 type ColumnVisibility = {
@@ -25,7 +25,6 @@ type ColumnVisibility = {
   location: boolean;
   funding_round: boolean;
   num_employees: boolean;
-  growth_percentage: boolean;
 };
 
 export default function CompaniesPage() {
@@ -62,7 +61,6 @@ export default function CompaniesPage() {
     location: true,
     funding_round: true,
     num_employees: true,
-    growth_percentage: true,
   });
   const [showCustomizePanel, setShowCustomizePanel] = useState(false);
 
@@ -188,7 +186,7 @@ export default function CompaniesPage() {
         let valA: any = a[sortBy as keyof Company];
         let valB: any = b[sortBy as keyof Company];
 
-        if (sortBy === "funding" || sortBy === "num_employees" || sortBy === "growth_percentage") {
+        if (sortBy === "funding" || sortBy === "num_employees") {
           valA = Number(valA);
           valB = Number(valB);
         }
@@ -441,14 +439,6 @@ export default function CompaniesPage() {
                 />
                 Num Employees
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={columnVisibility.growth_percentage}
-                  onChange={() => toggleColumn("growth_percentage")}
-                />
-                Growth Percentage
-              </label>
             </div>
           </Card>
         </div>
@@ -502,14 +492,6 @@ export default function CompaniesPage() {
                       # Employees{renderSortArrow("num_employees")}
                     </th>
                   )}
-                  {columnVisibility.growth_percentage && (
-                    <th
-                      className="px-4 py-2 text-left cursor-pointer"
-                      onClick={() => handleSort("growth_percentage")}
-                    >
-                      Growth %{renderSortArrow("growth_percentage")}
-                    </th>
-                  )}
                   <th className="px-4 py-2 text-left">Founded</th>
                   <th className="px-4 py-2 text-left">AI Summary</th>
                 </tr>
@@ -543,9 +525,6 @@ export default function CompaniesPage() {
                       )}
                       {columnVisibility.num_employees && (
                         <td className="px-4 py-2">{c.num_employees}</td>
-                      )}
-                      {columnVisibility.growth_percentage && (
-                        <td className="px-4 py-2">{c.growth_percentage}%</td>
                       )}
                       <td className="px-4 py-2">{c.founding_year}</td>
                       <td className="px-4 py-2">
