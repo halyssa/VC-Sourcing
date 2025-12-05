@@ -14,8 +14,8 @@ type Company = {
   location: string;
   num_employees: number;
   founding_year: number;
-  growth_percentage: number;
   sector: string;
+  description?: string;
 };
 
 export default function WatchlistPage() {
