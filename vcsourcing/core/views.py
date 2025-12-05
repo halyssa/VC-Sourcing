@@ -64,7 +64,6 @@ class CompanyListView(generics.ListAPIView):
             "funding": "funding",
             "funding_round": "funding_round",
             "num_employees": "num_employees",
-            "growth_percentage": "growth_percentage",
         }
 
         if sort_by in valid_sort_fields and sort_dir in ["asc", "desc"]:
@@ -206,13 +205,15 @@ def company_summary(request, pk):
         f"Summarize this company for a VC associate: "
         f"Name: {company.name}, "
         f"Location: {company.location}, "
+        f"Sector: {company.sector}, "
         f"Funding Round: {company.funding_round}, "
         f"Total Funding: ${company.funding:,.0f}, "
         f"Employees: {company.num_employees}, "
-        f"Founded: {company.founding_year}, "
-        f"Growth: {company.growth_percentage}% year-over-year. "
-        f"Highlight the company's stage, and any growth signals in 3 sentences."
+        f"Founded: {company.founding_year}. "
     )
+    if company.description:
+        prompt += f"Description: {company.description}. "
+    prompt += "Highlight the company's stage and investment potential in 3 sentences."
 
     # Call LLM service
     try:
@@ -314,16 +315,16 @@ def recommended_companies(request):
 
         scored_companies.append((company, score))
 
-    # Sort by score descending, then by growth_percentage descending
-    scored_companies.sort(key=lambda x: (x[1], x[0].growth_percentage), reverse=True)
+    # Sort by score descending, then by funding descending
+    scored_companies.sort(key=lambda x: (x[1], x[0].funding), reverse=True)
 
     # Get top recommendations (limit to 10)
     top_recommendations = [company for company, score in scored_companies[:10] if score > 0]
 
-    # If no scored matches, return highest growth companies
+    # If no scored matches, return highest funded companies
     if not top_recommendations:
         top_recommendations = list(
-            candidate_companies.order_by("-growth_percentage")[:5]
+            candidate_companies.order_by("-funding")[:5]
         )
 
     # Serialize the results

@@ -7,13 +7,13 @@ class CompanySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
-            "sector", 
+            "sector",
             "funding_round",
             "funding",
             "location",
             "num_employees",
             "founding_year",
-            "growth_percentage",
+            "description",
         ]
 
 class WatchlistSerializer(serializers.ModelSerializer):
