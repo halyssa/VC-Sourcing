@@ -1,10 +1,10 @@
 import Input from "./Input";
 
-export default function SearchBar({ ...props }) {
+export default function SearchBar({ className = "", ...props }) {
   return (
     <Input
-      placeholder="Search..."
-      className="w-full"
+      placeholder="Search for companies..."
+      className={`${className}`}
       {...props}
     />
   );

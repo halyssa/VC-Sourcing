@@ -17,7 +17,7 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     if (!email || !password) {
-      setError("Please enter email and password");
+      setError("Please enter a valid email and password");
       return;
     }
     setLoading(true);
@@ -34,20 +34,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-zinc-50">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded shadow">
-        <h2 className="text-2xl font-semibold mb-4">Log in</h2>
-        {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
-        <label className="block mb-2 text-sm">Email</label>
-        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+  <div className="flex items-center justify-center min-h-screen bg-[#f1bfbf] font-sans">
+    {/* Container to center everything vertically */}
+    <div className="flex flex-col items-center w-1/3 h-[500px] bg-[#ffffff] border-width-[10px] border-color-[#bf1616]" style={{ borderRadius: '15px' }}>
+    
+      {/* Spacer to push the welcome message ~1/3 down the container */}
+      <div className="h-1/3 flex flex-col items-center w-full">
+        <h1 className="text-5xl font-bold text-[#870909] mb-6">Welcome Back</h1>
+        <p className="text-red-800 text-lg mb-[20px]">Log in to continue</p>
+        
+        {/* Inputs */}
+        <Input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email Address"
+          className="w-[300px] py-[15px] px-6 rounded-xl mb-[30px] text-lg hover:bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
+        />
+        <Input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••••••"
+          className="w-[300px] py-[15px] px-3 rounded-xl mb-[60px] text-lg hover:bg-[#f1bfbf]"
+          style={{ borderRadius: '12px' }}
+        />
 
-        <label className="block mt-4 mb-2 text-sm">Password</label>
-        <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
+        {/* Error message */}
+        {error && <div className="mb-6 text-sm text-yellow-300">{error}</div>}
 
-        <div className="mt-6 flex justify-between items-center">
-          <Button type="submit" className="px-6" disabled={loading}>{loading ? "Signing in..." : "Sign in"}</Button>
-        </div>
-      </form>
+        {/* Sign in button */}
+        <Button
+          type="submit"
+          className="w-[300px] py-[10px] rounded-xl mb-[30px] text-lg text-[#ffffff] bg-[#bf1616] text-white hover:bg-[#870909]"
+          style={{ borderRadius: '12px' }}
+          onClick={(e) => handleSubmit(e)}
+          disabled={loading}
+        >
+          {loading ? "Signing in..." : "Sign in"}
+        </Button>
+
+        {/* Optional sign up link */}
+        <p className="text-white text-sm">
+          Don't have an account? <a href="/signup" className="underline">Sign up</a>
+        </p>
+      </div>
     </div>
-  );
+  </div>
+);
 }
