@@ -34,7 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-  <div className="flex items-center justify-center min-h-screen bg-[#f1bfbf] font-sans">
+  <div className="flex items-center justify-center min-h-screen bg-[#eaeaea] font-sans">
     {/* Container to center everything vertically */}
     <div className="flex flex-col items-center w-1/3 h-[500px] bg-[#ffffff] border-width-[10px] border-color-[#bf1616]" style={{ borderRadius: '15px' }}>
     

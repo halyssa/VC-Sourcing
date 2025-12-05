@@ -359,6 +359,8 @@ export default function CompaniesPage() {
           >Hi Test{name ?? "!"}</div>
           <Button 
           className="border px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff]"
+          style={{ borderRadius: '12px' }}
+
 
           onClick={handleLogout}>Logout</Button>
         </div>
@@ -539,7 +541,7 @@ export default function CompaniesPage() {
                         <button
                           onClick={() => toggleWatchlist(c.id)}
                           disabled={watchlistLoading.has(c.id)}
-                          className="text-2xl hover:opacity-70 disabled:opacity-50"
+                          className="text-2xl hover:opacity-70 disabled:opacity-50 text-[#870909]"
                           title={watchlistCompanyIds.has(c.id) ? "Remove from watchlist" : "Add to watchlist"}
                         >
                           {watchlistCompanyIds.has(c.id) ? "★" : "☆"}
@@ -638,10 +640,16 @@ export default function CompaniesPage() {
           <p>Add companies to your watchlist to see recommendations here!</p>
         ) : (
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"    
+          <div className="flex flex-col space-y-4"    
           >
             {recommended.slice(0, 5).map((c, idx) => (
-              <Card key={idx}>
+              <Card 
+              key={idx}
+              className=" border bg-white p-4 shadow-md w-full mb-[20px] py-0 border-[#870909] bg-[#eaeaea]" 
+              style={{ borderRadius: '12px' }}
+
+              >
+
                 <h3 className="font-bold text-[#870909]">{c.name}</h3>
                 <p>{c.sector}</p>
                 <p>{c.funding_round} | ${Number(c.funding).toLocaleString()}</p>
