@@ -109,9 +109,10 @@ export default function WatchlistPage() {
       <div className="w-full max-w-4xl flex justify-between px-6 mb-6">
         <h1 className="text-2xl font-bold text-[#870909]">Your Watchlist</h1>
         <Button 
-          className="border px-2 py-[5px] mr-[10px] bg-[#870909] text-[#ffffff] mb-[20px]"
+          className="border px-[2px] py-2 mr-[10px] h-[30px] bg-[#870909] text-[#ffffff] mb-[20px] mt-[30px]"
           style={{ borderRadius: '12px' }}
-        onClick={() => router.push("/companies")}>Back to Companies</Button>
+          onClick={() => router.push("/companies")}>Back to Companies
+        </Button>
       </div>
 
       <div className="w-full max-w-4xl px-6">
@@ -122,45 +123,59 @@ export default function WatchlistPage() {
             <p>You have no companies in your watchlist.</p>
           </Card>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left text-[#870909]">Remove</th>
-                  <th className="px-4 py-2 text-left text-[#870909]">Name</th>
-                  <th className="px-4 py-2 text-left text-[#870909]">Sector</th>
-                  <th className="px-4 py-2 text-left text-[#870909]">Funding</th>
-                  <th className="px-4 py-2 text-left text-[#870909]">Location</th>
-                  <th className="px-4 py-2 text-left text-[#870909]">Employees</th>
-                </tr>
-              </thead>
-              <tbody>
-                {watchlistCompanies.map((c, idx) => (
-                  <Fragment key={c.id}>
-                    <tr className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-4 py-2">
-                        <button
-                          onClick={() => removeFromWatchlist(c.id)}
-                          disabled={watchlistLoading.has(c.id)}
-                          className="text-2xl hover:opacity-70 disabled:opacity-50"
-                          title="Remove from watchlist"
-                        >
-                          ★
-                        </button>
-                      </td>
-                      <td className="px-4 py-2">{c.name}</td>
-                      <td className="px-4 py-2">{c.sector}</td>
-                      <td className="px-4 py-2">${Number(c.funding).toLocaleString()}</td>
-                      <td className="px-4 py-2">{c.location}</td>
-                      <td className="px-4 py-2">{c.num_employees}</td>
-                    </tr>
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
+          // ⬇️ REPLACED: Table structure replaced with Card-based list
+          <div className="flex flex-col space-y-3">
+            
+            {/* HEADER CARD (Column Names) */}
+            <Card
+              className="p-3 shadow-sm border border-[#870909] bg-[#f0f0f0] w-full mb-[20px]"
+            >
+              <div className="flex text-sm font-bold text-[#870909]">
+                {/* Define widths to align columns */}
+                <div className="w-[10%]">Remove</div> 
+                <div className="w-[20%]">Name</div>
+                <div className="w-[15%]">Sector</div>
+                <div className="w-[20%]">Funding</div>
+                <div className="w-[20%]">Location</div>
+                <div className="w-[15%]">Employees</div>
+              </div>
+            </Card>
+
+            {/* COMPANY CARDS - Mapped Data Rows */}
+            {watchlistCompanies.map((c, idx) => (
+              <Card 
+                key={c.id} 
+                // Grey card styling
+                className="bg-[#eaeaea] p-3 shadow-md w-full hover:shadow-lg transition duration-150 mb-[20px]" 
+                style={{ borderRadius: '12px' }}
+              >
+                {/* Horizontal display of company info */}
+                <div className="flex items-center text-sm">
+                  {/* Remove Button (10% width, on the very left) */}
+                  <div className="w-[10%]">
+                    <button
+                      onClick={() => removeFromWatchlist(c.id)}
+                      disabled={watchlistLoading.has(c.id)}
+                      className="text-2xl text-[#870909] hover:opacity-70 disabled:opacity-50"
+                      title="Remove from watchlist"
+                    >
+                      ★
+                    </button>
+                  </div>
+                  
+                  {/* Company Data */}
+                  <div className="w-[20%] font-semibold">{c.name}</div>
+                  <div className="w-[15%]">{c.sector}</div>
+                  <div className="w-[20%]">${Number(c.funding).toLocaleString()}</div>
+                  <div className="w-[20%]">{c.location}</div>
+                  <div className="w-[15%]">{c.num_employees}</div>
+                </div>
+              </Card>
+            ))}
           </div>
         )}
       </div>
     </div>
+
   );
 }
